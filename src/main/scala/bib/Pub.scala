@@ -27,6 +27,8 @@ object Pub extends App {
   }
   // Now we are in Scala land
 
+  var formatHTML = true
+
   def printMap(map:  Map[String, Map[String, String]]) = {
     for ((k, v) <- map) {
       print(typeMap(k) + " ")
@@ -38,7 +40,16 @@ object Pub extends App {
 
   def authors(s: String) = {
     val v = s.split(" and ")
-    val l = for (e <- v) yield e.trim
+
+    def fix(s: String) = {
+      val t = s.trim
+      if (t.contains(",")) {
+        val a = t.split(",").map(_.trim)
+        a(1) + " " + a(0)
+      } else t
+    }
+    val l = for (e <- v) yield fix(e)
+
     val ret = if (l.length > 2)  l.init.mkString(", ") + ", and " + l.last
     else if (l.length == 2) l.head + " and " + l.last
     else l.head
@@ -52,6 +63,24 @@ object Pub extends App {
     max = if (year > max) year else max
     v("author") = authors(v("author"))
     v("title") = v("title").filter(_ != '}').filter(_ != '{')
+  }
+
+
+  def fixUmlaut(s: String) = {
+
+    val m = Map("{\\o}" -> "\u00f8", "\\\"u" -> "\u00FC", "{\\'o}" -> "o", "\\'{e}" -> "\u00e9", "\\'{a}" -> "\u00e1")
+
+    def mySplit(s: String, p: String, subst: String): String = {
+      // TODO: a recursive function to split on a string
+      val pos = s.indexOf(p)
+      if (pos < 0) s else s.substring(0, pos) + subst + mySplit(s.substring(pos+p.length, s.length), p, subst)
+    }
+
+    var ret = s
+    for ((k, v) <- m) {
+      ret = mySplit(ret, k, v)
+    }
+    ret
   }
 
   def formatMonths(map:  Map[String, Map[String, String]], formatYear: (Int) => String, formatEndYear: () => String,
@@ -80,10 +109,14 @@ object Pub extends App {
   }
 
   def formatYear(y: Int) = {
-    y.toString + "\n"
+    if (formatHTML)
+      s"<h3>${y.toString}</h3>\n<ol>"
+    else
+      s"${y.toString}\n"
   }
+
   def formatEndYear() = {
-    "\n"
+    "</ol>\n"
   }
 
 
@@ -91,21 +124,40 @@ object Pub extends App {
 
     val isArticle = map.contains("journal")
 
-    val authors = map("author")
+    def num(s: String) = if (formatHTML) s.split("--").mkString("-") else s
+
+    val authors = fixUmlaut(map("author"))
     val title = map("title")
-    val pages = if (map.contains("pages")) map("pages") + "," else ""
-    val volume = if (map.contains("volume")) map("volume")+":" + pages else ""
+    val p = if (map.contains("pages")) map("pages") else ""
+    val pages = num(p)
+    val n = if (map.contains("number")) "(" + map("number") + ")" else ""
+    val number = num(n)
+    val volume = if (map.contains("volume")) map("volume")+ number + ":" + pages else ""
 
-    val in = if (isArticle) "<em> " + map("journal") + "</em>, " + volume
-      else "xxx"
+    val in = if (isArticle) "<em>" + map("journal") + "</em>, " + volume + ", " + map("year")
+      // TODO: month, where, pages...
+      else "<em>" + map("booktitle") + "</em>, " + map("year")
 
-    s"<li> $authors\n <b>$title.</b><br>\n $in\n</li>\n"
+    s"<li><p> $authors\n <b>$title.</b><br>\n $in.\n</p></li>\n"
   }
 
   val articles = entryMap.filter(x => typeMap(x._1) == "ARTICLE")
   val paper = entryMap.filter(x => typeMap(x._1) == "INPROCEEDINGS")
   val books = entryMap.filter(x => typeMap(x._1) == "BOOK")
-  val s = formatMonths(articles, formatYear, formatEndYear, formatItem)
-  // TODO: do Latex to HTML for special characters
+
+  val paperMin = min
+  min = 2008
+  var s = ""
+
+  s += "<h2>Journal Articles</h2>"
+  s += formatMonths(articles, formatYear, formatEndYear, formatItem)
+  s += "<h2>Reviewed Conference and Workshop Papers</h2>"
+  min = paperMin
+  s += formatMonths(paper, formatYear, formatEndYear, formatItem)
+
+  // Check is flag or different functions is the better way
   println(s)
+  val pw = new PrintWriter("pub.html")
+  pw.print(s)
+  pw.close()
 }
