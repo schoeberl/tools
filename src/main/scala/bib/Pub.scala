@@ -8,6 +8,7 @@ import collection.mutable._
 
 object Pub extends App {
   val bibFile = "/Users/martin/paper/bib/jop_bib.bib"
+  // val bibFile = "/Users/martin/paper/tcapapers/2015/ftp-predict/web/pubs.bib"
 
   val reader = new FileReader(bibFile);
   val parser = new BibTeXParser();
@@ -68,10 +69,9 @@ object Pub extends App {
 
   def fixUmlaut(s: String) = {
 
-    val m = Map("{\\o}" -> "\u00f8", "\\\"u" -> "\u00FC", "{\\'o}" -> "o", "\\'{e}" -> "\u00e9", "\\'{a}" -> "\u00e1")
+    val m = Map("{\\o}" -> "\u00f8", "\\\"u" -> "\u00FC", "{\\'o}" -> "o", "\\'{e}" -> "\u00e9", "{\\'e}" -> "\u00e9", "\\'{a}" -> "\u00e1")
 
     def mySplit(s: String, p: String, subst: String): String = {
-      // TODO: a recursive function to split on a string
       val pos = s.indexOf(p)
       if (pos < 0) s else s.substring(0, pos) + subst + mySplit(s.substring(pos+p.length, s.length), p, subst)
     }
@@ -128,17 +128,33 @@ object Pub extends App {
 
     val authors = fixUmlaut(map("author"))
     val title = map("title")
-    val p = if (map.contains("pages")) map("pages") else ""
+    val p = map.getOrElse("pages", "")
     val pages = num(p)
+    val pdelim = if (pages == "") "" else ", "
+    val vdelim = if (pages == "") "" else ":"
     val n = if (map.contains("number")) "(" + map("number") + ")" else ""
     val number = num(n)
-    val volume = if (map.contains("volume")) map("volume")+ number + ":" + pages else ""
+    // This if contains is not very elegant, any better solution?
+    val volume = if (map.contains("volume")) map("volume")+ number + vdelim + pages + ", " else ""
+    val month = if (map.contains("month")) map("month") + ", " else ""
+    val location = if (map.contains("location")) map("location") + ", " else ""
 
-    val in = if (isArticle) "<em>" + map("journal") + "</em>, " + volume + ", " + map("year")
-      // TODO: month, where, pages...
-      else "<em>" + map("booktitle") + "</em>, " + map("year")
+    val in = if (isArticle) "<em>" + map("journal") + "</em>, " + volume + map("year")
+      else "<em>" + map("booktitle") + "</em>, " + pages + pdelim + location + month + map("year")
+    // TODO: url + doi
 
-    s"<li><p> $authors\n <b>$title.</b><br>\n $in.\n</p></li>\n"
+
+    // <a href="http://www.jopdesign.com/doc/jophwlocks.pdf">pdf</a>
+    //        <a href="http://dx.doi.org/10.1002/cpe.3950">doi</a>
+    val doi = map.getOrElse("doi", "")
+    val url = map.getOrElse("url", "")
+    val delim = if (doi != "" && url != "") ", " else ""
+
+    val formatDoi = if (doi == "") "" else "<a href=\"" + s"http://dx.doi.org/$doi" + "\">doi</a>"
+    val formatUrl = if (url == "") "" else "<a href=\"" + url + "\">pdf</a>"
+
+    val links = if (doi != "" || url != "")  s"($formatDoi$delim$formatUrl)" else ""
+    s"<li><p> $authors\n <b>$title.</b><br>\n $in. $links\n</p></li>\n"
   }
 
   val articles = entryMap.filter(x => typeMap(x._1) == "ARTICLE")
@@ -155,7 +171,7 @@ object Pub extends App {
   min = paperMin
   s += formatMonths(paper, formatYear, formatEndYear, formatItem)
 
-  // Check is flag or different functions is the better way
+  // Check if flag or different functions is the better way
   println(s)
   val pw = new PrintWriter("pub.html")
   pw.print(s)
