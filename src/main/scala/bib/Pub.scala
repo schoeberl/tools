@@ -9,6 +9,7 @@ import collection.mutable._
 object Pub extends App {
   val bibFile = "/Users/martin/paper/bib/jop_bib.bib"
   // val bibFile = "/Users/martin/paper/tcapapers/2015/ftp-predict/web/pubs.bib"
+  var formatHTML = false
 
   val reader = new FileReader(bibFile);
   val parser = new BibTeXParser();
@@ -27,8 +28,6 @@ object Pub extends App {
     typeMap += (k.toString -> v.getType.toString)
   }
   // Now we are in Scala land
-
-  var formatHTML = true
 
   def printMap(map:  Map[String, Map[String, String]]) = {
     for ((k, v) <- map) {
@@ -113,11 +112,11 @@ object Pub extends App {
     if (formatHTML)
       s"<h3>${y.toString}</h3>\n<ol>"
     else
-      s"${y.toString}\n"
+      s"\\subsubsection*{${y.toString}}\n\n"
   }
 
   def formatEndYear() = {
-    "</ol>\n"
+    if (formatHTML) "</ol>\n" else "\n"
   }
 
 
@@ -140,8 +139,11 @@ object Pub extends App {
     val month = if (map.contains("month")) map("month") + ", " else ""
     val location = if (map.contains("location")) map("location") + ", " else ""
 
-    val in = if (isArticle) "<em>" + map("journal") + "</em>, " + volume + map("year")
-      else "<em>" + map("booktitle") + "</em>, " + pages + pdelim + location + month + map("year")
+    val emStart = if (formatHTML) "<em>" else "\\emph{"
+    val emEnd = if (formatHTML) "</em>, " else "} "
+
+    val in = if (isArticle) emStart + map("journal") + emEnd + volume + map("year")
+      else emStart + map("booktitle") + emEnd + pages + pdelim + location + month + map("year")
 
     // <a href="http://www.jopdesign.com/doc/jophwlocks.pdf">pdf</a>
     //        <a href="http://dx.doi.org/10.1002/cpe.3950">doi</a>
@@ -153,7 +155,12 @@ object Pub extends App {
     val formatUrl = if (url == "") "" else "<a href=\"" + url + "\">pdf</a>"
 
     val links = if (doi != "" || url != "")  s"($formatDoi$delim$formatUrl)" else ""
-    s"<li><p> $authors\n <b>$title.</b><br>\n $in. $links\n</p></li>\n"
+
+    val htmlEntry = s"<li><p> $authors\n <b>$title.</b><br>\n $in. $links\n</p></li>\n"
+    // Maybe TODO: links for PDF
+    val texEntry = s"\\item $authors\n $title.\n $in.\n\n"
+
+    if (formatHTML) htmlEntry else texEntry
   }
 
   val articles = entryMap.filter(x => typeMap(x._1) == "ARTICLE")
@@ -164,15 +171,18 @@ object Pub extends App {
   min = 2008
   var s = ""
 
-  s += "<h2>Journal Articles</h2>"
+
+  s += (if (formatHTML) "<h2>Journal Articles</h2>\n\n" else "\\subsection*{Journal Articles}\n\n\\begin{enumerate}\n\n")
   s += formatMonths(articles, formatYear, formatEndYear, formatItem)
-  s += "<h2>Reviewed Conference and Workshop Papers</h2>"
+  s += (if (formatHTML) "" else "\\end{enumerate}\n\n")
+  s += (if (formatHTML) "<h2>Reviewed Conference and Workshop Papers</h2>\n\n" else "\\subsection*{Reviewed Conference and Workshop Papers}\n\n\\begin{enumerate}\n\n")
   min = paperMin
   s += formatMonths(paper, formatYear, formatEndYear, formatItem)
+  s += (if (formatHTML) "" else "\\end{enumerate}\n\n")
 
   // Check if flag or different functions is the better way
   println(s)
-  val pw = new PrintWriter("pub.html")
+  val pw = new PrintWriter(if (formatHTML) "pub.html" else "pub.tex")
   pw.print(s)
   pw.close()
 }
