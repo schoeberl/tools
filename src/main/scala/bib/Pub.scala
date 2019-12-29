@@ -69,7 +69,8 @@ object Pub extends App {
 
   def fixUmlaut(s: String) = {
 
-    val m = Map("{\\o}" -> "\u00f8", "\\\"u" -> "\u00FC", "{\\'o}" -> "o", "\\'{e}" -> "\u00e9", "{\\'e}" -> "\u00e9", "\\'{a}" -> "\u00e1")
+    val m = Map("{\\o}" -> "\u00f8", "\\\"u" -> "\u00FC", "{\\'o}" -> "o", "\\'{e}" -> "\u00e9", "{\\'e}" -> "\u00e9",
+      "\\'{a}" -> "\u00e1", "{\\\"o}" -> "\u00f6", "{\\\"a}" -> "\u00e4")
 
     def mySplit(s: String, p: String, subst: String): String = {
       val pos = s.indexOf(p)
@@ -141,8 +142,6 @@ object Pub extends App {
 
     val in = if (isArticle) "<em>" + map("journal") + "</em>, " + volume + map("year")
       else "<em>" + map("booktitle") + "</em>, " + pages + pdelim + location + month + map("year")
-    // TODO: url + doi
-
 
     // <a href="http://www.jopdesign.com/doc/jophwlocks.pdf">pdf</a>
     //        <a href="http://dx.doi.org/10.1002/cpe.3950">doi</a>
