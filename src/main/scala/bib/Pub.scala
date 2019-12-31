@@ -80,7 +80,7 @@ object Pub extends App {
     for ((k, v) <- m) {
       ret = mySplit(ret, k, v)
     }
-    ret
+    if (formatHTML) ret else s
   }
 
   def formatMonths(map:  Map[String, Map[String, String]], formatYear: (Int) => String, formatEndYear: () => String,
