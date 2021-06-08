@@ -6,10 +6,16 @@ import java.io._
 import collection.JavaConverters._
 import collection.mutable._
 
+/**
+  * Format a publication list as for Latex and as HTML.
+  *
+  * TODO: Throw an error is a month entry is wrong (otherwise the publication gets lost)
+  */
+
 object Pub extends App {
   val bibFile = "/Users/martin/paper/bib/jop_bib.bib"
   // val bibFile = "/Users/martin/paper/tcapapers/2015/ftp-predict/web/pubs.bib"
-  var formatHTML = false
+  var formatHTML = true
 
   val reader = new FileReader(bibFile);
   val parser = new BibTeXParser();
@@ -94,6 +100,9 @@ object Pub extends App {
       s += formatYear(year)
       val paper = map.filter(x => x._2("year") == year.toString)
       val m = paper.filter(x => x._2.contains("month"))
+      for (p <- m) {
+        assert(months.contains(p._2("month")), "Following paper has a wrong month: " + p._2)
+      }
       for (month <- months.reverse) {
         for ((k, v) <- m.filter(x => x._2("month") == month)) {
           s += format(v)
@@ -181,7 +190,7 @@ object Pub extends App {
   s += (if (formatHTML) "" else "\\end{enumerate}\n\n")
 
   // Check if flag or different functions is the better way
-  println(s)
+  // println(s)
   val pw = new PrintWriter(if (formatHTML) "pub.html" else "pub.tex")
   pw.print(s)
   pw.close()
