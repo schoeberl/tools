@@ -74,8 +74,13 @@ object Pub extends App {
 
   def fixUmlaut(s: String) = {
 
+    /*
     val m = Map("{\\o}" -> "\u00f8", "\\\"u" -> "\u00FC", "{\\'o}" -> "o", "\\'{e}" -> "\u00e9", "{\\'e}" -> "\u00e9",
       "\\'{a}" -> "\u00e1", "{\\\"o}" -> "\u00f6", "{\\\"a}" -> "\u00e4")
+     */
+
+    val m = Map("{\\o}" -> "&oslash;", "\\\"u" -> "&uuml;", "{\\\"u}" -> "&uuml;", "{\\'o}" -> "&oacute;", "\\'{e}" -> "&eacute;",
+      "{\\'e}" -> "&eacute;", "\\'{a}" -> "&aacute;", "{\\'a}" -> "&aacute;", "{\\\"o}" -> "&ouml;", "{\\\"a}" -> "&auml;")
 
     def mySplit(s: String, p: String, subst: String): String = {
       val pos = s.indexOf(p)
