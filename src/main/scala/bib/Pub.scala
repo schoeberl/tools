@@ -15,7 +15,7 @@ import collection.mutable._
 object Pub extends App {
   val bibFile = "/Users/martin/paper/bib/jop_bib.bib"
   // val bibFile = "/Users/martin/paper/tcapapers/2015/ftp-predict/web/pubs.bib"
-  var formatHTML = true
+  var formatHTML = false
 
   val reader = new FileReader(bibFile);
   val parser = new BibTeXParser();
@@ -167,12 +167,14 @@ object Pub extends App {
 
     val formatDoi = if (doi == "") "" else "<a href=\"" + s"http://dx.doi.org/$doi" + "\">doi</a>"
     val formatUrl = if (url == "") "" else "<a href=\"" + url + "\">pdf</a>"
+    val formatDoiPdf = if (doi == "") "" else "\\href{" + s"http://dx.doi.org/$doi" + "}{doi}"
+    val formatUrlPdf = if (url == "") "" else "\\href{" + url + "}{pdf}"
 
     val links = if (doi != "" || url != "")  s"($formatDoi$delim$formatUrl)" else ""
+    val linksPdf = if (doi != "" || url != "")  s"($formatDoiPdf$delim$formatUrlPdf)" else ""
 
     val htmlEntry = s"<li><p> $authors\n <b>$title.</b><br>\n $in. $links\n</p></li>\n"
-    // Maybe TODO: links for PDF
-    val texEntry = s"\\item $authors\n $title.\n $in.\n\n"
+    val texEntry = s"\\item $authors\n $title.\n $in.\n$linksPdf\n\n"
 
     if (formatHTML) htmlEntry else texEntry
   }
