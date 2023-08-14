@@ -31,7 +31,7 @@ object Pub extends App {
       map += (fk.toString -> fv.toUserString.split('\n').mkString(" "))
     }
     entryMap += (k.toString -> map)
-    typeMap += (k.toString -> v.getType.toString)
+    typeMap += (k.toString -> v.getType.toString.toUpperCase)
   }
   // Now we are in Scala land
 
@@ -43,6 +43,7 @@ object Pub extends App {
       println()
     }
   }
+  // printMap(entryMap) // for debugging
 
   def authors(s: String) = {
     val v = s.split(" and ")
